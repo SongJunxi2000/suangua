@@ -1,4 +1,4 @@
-# 算卦 suangua
+# 周易占筮 Claude 技能集 · I Ching Divination Skills for Claude
 
 [中文](#中文) | [English](#english)
 
@@ -6,42 +6,43 @@
 
 ## 中文
 
-### 这是什么
+本仓库收录一组配套的 Claude 技能（Agent Skills），围绕《周易》占筮分工协作：
 
-**suangua（算卦）** 是一个 Claude 技能（Agent Skill），专职为用户**起卦占筮**。所有卦象推演均由 `scripts/` 下的确定性 Python 脚本完成，经文一律引自 `data/zhouyi.json` 中的《周易》文本——Claude 不心算卦象、不凭记忆背诵经文，保证每一卦可复现、可对账。
+| 技能 | 职责 |
+|---|---|
+| [`suangua/`](suangua/)（算卦） | **只起卦**：推演卦象，呈现本卦、动爻、之卦与经文原文 |
+| [`jiegua/`](jiegua/)（解卦） | **只解卦**：接过已起出的卦，解读卦义并落到问卦人的事上 |
 
-本技能**只管起卦，不管解卦**：它呈现本卦、动爻、之卦、卦辞爻辞与朱子断例取断指引，但不做任何吉凶解读——解卦由另一专职 agent 负责。
+两者一起一解、首尾相接：算卦交出卦单与 JSON 档案，解卦以此为全部输入。也可各自单独安装使用。
 
-### 功能
+### 算卦（suangua）——起卦专职
 
-支持两种起卦方式：
+所有卦象推演均由 `scripts/` 下的确定性 Python 脚本完成，经文一律引自 `data/zhouyi.json` 的《周易》结构化文本——Claude 不心算卦象、不凭记忆背经文，每一卦可复现、可对账。支持两种起卦方式：
 
-- **数字卦** —— 用户心中默想三个 000–999 的数字，脚本按取余法即刻成卦；
-- **筹策卦（大衍筮法）** —— 完整模拟"大衍之数五十，其用四十有九"的十八变筮法。六爻六轮，每轮三变，用户以四元素抓阄的方式参与每一变。脚本内置**承诺哈希（commitment hash）机制**：每变的元素映射在用户选择前已以 SHA-256 承诺锁定，揭示后可复算对账，保证公平、不可作弊。
+- **数字卦** —— 心中默想三个 000–999 的数字，取余法即刻成卦；
+- **筹策卦（大衍筮法）** —— 完整模拟"大衍之数五十，其用四十有九"的十八变筮法，六爻六轮、每轮三变，用户以四元素抓阄参与每一变。内置 **SHA-256 承诺哈希机制**：元素映射在用户选择前已锁定，揭示后可复算对账，保证公平。
 
-每卦结束后输出可读的 `.txt` 卦单与完整的 `.json` 档案（含数据校验和），档案即后续解卦所需的全部输入。
+产出可读的 `.txt` 卦单与带校验和的 `.json` 档案。它只呈卦，不做任何吉凶解读。
 
-### 仓库结构
+### 解卦（jiegua）——解读专职
 
-```
-SKILL.md          技能入口：触发条件与起卦流程规范
-scripts/          确定性起卦脚本（数字卦、筹策卦、数据构建与校验）
-data/zhouyi.json  《周易》全文结构化数据（卦辞、彖、象、爻辞等）
-data/qa_report.md 文本勘误与版本差异记录
-references/       系辞、说卦、序卦、杂卦等参考文献
-```
+接过算卦的卦单（或用户自带的外来卦，用 `scripts/chagua.py` 查经文、推之卦、出朱子断例），以三件工具解读：**以辞为体**（从主断之辞出发）、**以象为境**（内外卦读作"我"与"世界"）、**以变为时**（之卦讲下一步，动爻位置估节奏）。
 
-### 如何使用
+解读遵循四条心法：解卦给的是**视角而非判决**——每次必交付一个对方没想到的角度、一两个能使劲的方向、一个开放的问题；吉凶永远在流转，不铁口直断、不恐吓、不打包票；健康、法律、大额钱财之事明确以专业意见为准。
 
-**Claude Code：** 克隆到技能目录即可（个人级用 `~/.claude/skills/`，项目级用 `.claude/skills/`）：
+### 安装使用
+
+**Claude Code：** 克隆仓库，把需要的技能目录放入技能目录（个人级 `~/.claude/skills/`，项目级 `.claude/skills/`）：
 
 ```bash
-git clone https://github.com/SongJunxi2000/suangua.git ~/.claude/skills/suangua
+git clone https://github.com/SongJunxi2000/suangua.git
+cp -R suangua/suangua ~/.claude/skills/suangua
+cp -R suangua/jiegua  ~/.claude/skills/jiegua
 ```
 
-**claude.ai：** 将本仓库内容打包为 zip 并改后缀为 `.skill`，在 Settings → Capabilities 中上传。
+**claude.ai：** 将某个技能目录（如 `suangua/`）单独打包为 zip 并改后缀为 `.skill`，在 Settings → Capabilities 中上传。
 
-之后对 Claude 说"帮我算一卦"“占一占这件事”“起个卦"等即可触发。Claude 会先问所占何事（命辞，可不答），再让你选数字卦或筹策卦，随后按流程成卦并交付卦单。
+之后对 Claude 说"帮我算一卦"即可起卦；卦成之后追问"这卦什么意思 / 是吉是凶"，解卦技能自动接手。
 
 > 依赖：Python 3，无第三方库。
 
@@ -49,41 +50,42 @@ git clone https://github.com/SongJunxi2000/suangua.git ~/.claude/skills/suangua
 
 ## English
 
-### What is this
+This repository hosts a pair of complementary Claude Agent Skills that divide the work of I Ching (Yijing / Book of Changes) divination:
 
-**suangua** ("casting divination" in Chinese) is a Claude Agent Skill dedicated to **casting I Ching (Yijing / Book of Changes) hexagrams**. All hexagram derivation is done by deterministic Python scripts under `scripts/`, and every quoted passage comes verbatim from the structured Zhouyi text in `data/zhouyi.json` — Claude never computes hexagrams mentally or recites the classics from memory, so every cast is reproducible and auditable.
+| Skill | Role |
+|---|---|
+| [`suangua/`](suangua/) ("cast") | **Casting only**: derives the hexagram and presents the primary hexagram, moving lines, derived hexagram, and verbatim classical text |
+| [`jiegua/`](jiegua/) ("interpret") | **Interpretation only**: takes an already-cast hexagram and reads it in the context of the querent's actual question |
 
-This skill **only casts the hexagram; it does not interpret it**. It presents the primary hexagram, moving lines, the derived hexagram, the relevant classical texts, and Zhu Xi's line-selection rules for reading — but offers no judgment of fortune. Interpretation is delegated to a separate agent.
+They form a pipeline — suangua outputs a hexagram sheet and a JSON record, which is jiegua's complete input — but each can also be installed and used on its own.
 
-### Features
+### suangua — the caster
 
-Two casting methods are supported:
+All hexagram derivation is done by deterministic Python scripts under `scripts/`; every quoted passage comes verbatim from the structured Zhouyi text in `data/zhouyi.json`. Claude never computes hexagrams mentally or recites the classics from memory, so every cast is reproducible and auditable. Two casting methods:
 
-- **Number method (数字卦)** — the user silently picks three numbers between 000–999; the script derives a hexagram instantly via modular arithmetic.
-- **Yarrow-stalk method (大衍筮法)** — a full simulation of the classical 18-operation yarrow-stalk ritual ("the great expansion number is fifty, of which forty-nine are used"). Six rounds (one per line), three operations per round, with the user participating in each operation by choosing among four elements. A built-in **commitment-hash scheme** locks each operation's element mapping with SHA-256 *before* the user chooses; after the reveal, anyone can recompute the hash to verify fairness — no cheating possible.
+- **Number method (数字卦)** — silently pick three numbers between 000–999; a hexagram is derived instantly via modular arithmetic.
+- **Yarrow-stalk method (大衍筮法)** — a full simulation of the classical 18-operation yarrow-stalk ritual: six rounds (one per line), three operations each, with the user participating by choosing among four elements. A built-in **SHA-256 commitment-hash scheme** locks each mapping *before* the user chooses; after the reveal anyone can recompute the hash to verify fairness.
 
-Each cast produces a human-readable `.txt` hexagram sheet and a complete `.json` record (with data checksums) — the record is the full input needed by any downstream interpretation agent.
+Outputs a human-readable `.txt` hexagram sheet and a checksummed `.json` record. It presents the hexagram only — no judgment of fortune.
 
-### Repository layout
+### jiegua — the interpreter
 
-```
-SKILL.md          Skill entry point: triggers and casting workflow
-scripts/          Deterministic casting scripts (number method, yarrow-stalk method, data build & validation)
-data/zhouyi.json  Full structured Zhouyi text (judgments, commentaries, line statements)
-data/qa_report.md Text errata and edition-difference records
-references/       Reference texts: Xici, Shuogua, Xugua, Zagua
-```
+Takes suangua's hexagram sheet (or a hexagram cast elsewhere — `scripts/chagua.py` looks up the text, derives the changed hexagram, and applies Zhu Xi's line-selection rules) and interprets with three tools: **the text as skeleton** (start from the governing line statement), **the imagery as setting** (inner/outer trigrams read as "self" and "world"), and **the change as timing** (the derived hexagram is the next chapter; the moving line's position sets the tempo).
 
-### How to use
+Its guiding principles: an interpretation offers **perspective, not verdict** — every reading must deliver an angle the querent hadn't considered, one or two concrete levers to act on, and an open question; fortune is always in flux, so no absolute pronouncements, no scaremongering, no guarantees; for health, legal, or major financial matters, professional advice explicitly comes first.
 
-**Claude Code:** clone into your skills directory (`~/.claude/skills/` for personal use, `.claude/skills/` for a project):
+### Installation & usage
+
+**Claude Code:** clone the repo and copy the skill directories you want into your skills directory (`~/.claude/skills/` for personal use, `.claude/skills/` for a project):
 
 ```bash
-git clone https://github.com/SongJunxi2000/suangua.git ~/.claude/skills/suangua
+git clone https://github.com/SongJunxi2000/suangua.git
+cp -R suangua/suangua ~/.claude/skills/suangua
+cp -R suangua/jiegua  ~/.claude/skills/jiegua
 ```
 
-**claude.ai:** zip the repository contents, rename the archive to `.skill`, and upload it under Settings → Capabilities.
+**claude.ai:** zip an individual skill directory (e.g. `suangua/`), rename the archive to `.skill`, and upload it under Settings → Capabilities.
 
-Then simply ask Claude for a divination (e.g. "cast a hexagram for me" / "帮我算一卦"). Claude will ask what your question is (optional), let you choose a casting method, walk you through the ritual, and deliver the hexagram sheet and record.
+Then just ask Claude to cast a hexagram ("帮我算一卦" / "cast a hexagram for me"); once cast, ask what it means and the jiegua skill takes over.
 
 > Requirements: Python 3, no third-party packages.
